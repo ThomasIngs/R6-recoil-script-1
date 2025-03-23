@@ -1,0 +1,60 @@
+---                              R E C O I L  C O N T R O L                               ----
+
+EnableRCS = true
+
+RecoilControlMode = "1"  -- Keep as string "1" for now
+
+RcCustomStrength = 7
+
+RequireToggle = false -- Always on
+
+ToggleKey = "CapsLock"  -- Or 58 (key code)
+
+DelayRate = 7
+
+-------------  Recoil Presets ------
+local RecoilStrengths = {
+    ["1"] = 13,  -- Mode 1 (using your original value)
+    ["2"] = 5   -- Mode 2 (using your original value)
+}
+
+RecoilControlStrength = RecoilStrengths[RecoilControlMode]
+
+--------------------------------------
+
+EnablePrimaryMouseButtonEvents(true)
+
+-- Global variable to track Caps Lock state
+local isCapsLockPressed = false
+
+function OnEvent(event, arg)
+    if EnableRCS then
+        -- Check Caps Lock state *directly* (polling)
+        local currentCapsLockState = IsKeyLockOn(ToggleKey)
+
+        -- Only change mode if Caps Lock state has *changed*
+        if currentCapsLockState ~= isCapsLockPressed then
+            isCapsLockPressed = currentCapsLockState  -- Update tracked state
+            if isCapsLockPressed then
+                RecoilControlMode = "2"
+            else
+                RecoilControlMode = "1"
+            end
+            OutputLogMessage("RecoilControlMode: " .. RecoilControlMode)
+        end
+
+        -- ***CRUCIAL CHANGE: Update RecoilControlStrength *INSIDE* the mouse button loop***
+        if IsMouseButtonPressed(3) then
+            repeat
+                if IsMouseButtonPressed(1) then
+                    repeat
+                        RecoilControlStrength = RecoilStrengths[RecoilControlMode] -- Update here!
+                        OutputLogMessage("RecoilControlStrength: " .. RecoilControlStrength) -- Log its value
+                        MoveMouseRelative(0, RecoilControlStrength)
+                        Sleep(DelayRate)
+                    until not IsMouseButtonPressed(1)
+                end
+            until not IsMouseButtonPressed(3)
+        end
+    end
+end
